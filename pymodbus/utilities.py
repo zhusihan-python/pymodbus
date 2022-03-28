@@ -7,6 +7,7 @@ data computing checksums, and decode checksums.
 """
 from pymodbus.compat import int2byte, byte2int, IS_PYTHON3
 from six import string_types
+import libscrc
 
 
 class ModbusTransactionState(object):
@@ -176,6 +177,7 @@ def computeCRC(data):
         idx = __crc16_table[(crc ^ byte2int(a)) & 0xff]
         crc = ((crc >> 8) & 0xff) ^ idx
     swapped = ((crc << 8) & 0xff00) | ((crc >> 8) & 0x00ff)
+    # swapped = struct.pack('>H', swapped)
     return swapped
 
 
@@ -187,6 +189,25 @@ def checkCRC(data, check):
     :returns: True if matched, False otherwise
     """
     return computeCRC(data) == check
+
+
+def computeCRCFast(data):
+    """
+    use libscrc cost 7% time conmpared to computeCRC
+    be careful the result need struct.pack('<H', crc16_byte)
+    original is struct.pack('>H', computeCRC(data))
+    """
+    return libscrc.modbus(data)
+
+
+def checkCRCFast(data, check):
+    """ Checks if the data matches the passed in CRC
+
+    :param data: The data to create a crc16 of
+    :param check: The CRC to validate
+    :returns: True if matched, False otherwise
+    """
+    return computeCRCFast(data) == check
 
 
 def computeLRC(data):
@@ -256,3 +277,13 @@ __all__ = [
     'pack_bitstring', 'unpack_bitstring', 'default',
     'computeCRC', 'checkCRC', 'computeLRC', 'checkLRC', 'rtuFrameSize'
 ]
+
+
+if __name__ == "__main__":
+    import timeit
+    import struct
+    data = bytes([0x0, 0x1, 0x0, 0x16, 0x2, 0xf2, 0x10, 0x0, 0x40, 0x66, 0x0, 0x4, 0x0, 0x1, 0x0, 0x64])
+    res = computeCRC(data)
+    print(res)
+    # print(struct.pack('>H', res))
+    # print(timeit.timeit('computeCRC(data)', setup='from __main__ import computeCRC, data', number=100000))
