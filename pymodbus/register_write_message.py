@@ -345,6 +345,121 @@ class MaskWriteRegisterResponse(ModbusResponse):
 
 
 #---------------------------------------------------------------------------#
+# Write Single
+#---------------------------------------------------------------------------#
+class WriteSingleRegisterRequest(ModbusRequest):
+    '''
+    This function code is used to write a single holding register in a
+    remote device.
+
+    The Request PDU specifies the address of the register to
+    be written. Registers are addressed starting at zero. Therefore register
+    numbered 1 is addressed as 0.
+    '''
+    function_code = 6
+    _rtu_frame_size = 8
+
+    def __init__(self, address=None, value=None, **kwargs):
+        ''' Initializes a new instance
+
+        :param address: The address to start writing add
+        :param value: The values to write
+        '''
+        ModbusRequest.__init__(self, **kwargs)
+        self.address = address
+        self.value = value
+
+    def encode(self):
+        ''' Encode a write single register packet packet request
+
+        :returns: The encoded packet
+        '''
+        packet = struct.pack('>H', self.address)
+        if self.skip_encode:
+            packet += self.value
+        else:
+            packet += struct.pack('>H', self.value)
+        return packet
+
+    def decode(self, data):
+        ''' Decode a write single register packet packet request
+
+        :param data: The request to decode
+        '''
+        self.address, self.value = struct.unpack('>HH', data)
+
+    def execute(self, context):
+        ''' Run a write single register request against a datastore
+
+        :param context: The datastore to request from
+        :returns: An initialized response, exception message otherwise
+        '''
+        if not (0 <= self.value <= 0xffff):
+            return self.doException(merror.IllegalValue)
+        if not context.validate(self.function_code, self.address, 1):
+            return self.doException(merror.IllegalAddress)
+
+        context.setValues(self.function_code, self.address, [self.value])
+        values = context.getValues(self.function_code, self.address, 1)
+        return WriteSingleRegisterResponse(self.address, values[0])
+
+    def get_response_pdu_size(self):
+        """
+        Func_code (1 byte) + Register Address(2 byte) + Register Value (2 bytes)
+        :return:
+        """
+        return 1 + 2 + 2
+
+    def __str__(self):
+        ''' Returns a string representation of the instance
+
+        :returns: A string representation of the instance
+        '''
+        return "WriteRegisterRequest %d" % self.address
+
+
+class WriteSingleRegisterResponse(ModbusResponse):
+    '''
+    The normal response is an echo of the request, returned after the
+    register contents have been written.
+    '''
+    function_code = 6
+    _rtu_frame_size = 8
+
+    def __init__(self, address=None, value=None, **kwargs):
+        ''' Initializes a new instance
+
+        :param address: The address to start writing add
+        :param value: The values to write
+        '''
+        ModbusResponse.__init__(self, **kwargs)
+        self.address = address
+        self.value = value
+
+    def encode(self):
+        ''' Encode a write single register packet packet request
+
+        :returns: The encoded packet
+        '''
+        return struct.pack('>HH', self.address, self.value)
+
+    def decode(self, data):
+        ''' Decode a write single register packet packet request
+
+        :param data: The request to decode
+        '''
+        self.address, self.value = struct.unpack('>HH', data)
+
+    def __str__(self):
+        ''' Returns a string representation of the instance
+
+        :returns: A string representation of the instance
+        '''
+        params = (self.address, self.value)
+        return "WriteRegisterResponse %d => %d" % params
+
+
+#---------------------------------------------------------------------------#
 # Exported symbols
 #---------------------------------------------------------------------------#
 __all__ = [

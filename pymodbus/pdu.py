@@ -57,6 +57,11 @@ class ModbusPDU(object):
         self.transaction_id = kwargs.get('transaction', Defaults.TransactionId)
         self.protocol_id = kwargs.get('protocol', Defaults.ProtocolId)
         self.unit_id = kwargs.get('unit', Defaults.UnitId)
+        self.data_len = kwargs.get('data_len', Defaults.DataLength)
+        self.addr_len = kwargs.get('addr_len', Defaults.AddressLength)
+        self.addr_src = kwargs.get('addr_src', Defaults.AddressSource)
+        self.addr_dst = kwargs.get('addr_dst', Defaults.AddressDestination)
+        self.data = kwargs.get('data', Defaults.Data)
         self.skip_encode = kwargs.get('skip_encode', False)
         self.check = 0x0000
 

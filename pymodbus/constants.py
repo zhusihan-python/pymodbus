@@ -123,6 +123,11 @@ class Defaults(Singleton):
     TransactionId       = 0
     ProtocolId          = 0
     UnitId              = 0x00
+    DataLength          = 1
+    AddressLength       = 0x02
+    AddressSource       = 0xF2
+    AddressDestination  = 0x13
+    Data                = 0x00
     Baudrate            = 19200
     Parity              = 'N'
     Bytesize            = 8
